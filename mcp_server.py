@@ -65,8 +65,6 @@ class ChromeMCPServer:
         self.message_id = 0
         self.pending_requests = {}
         self.connected = False
-        self.sessions: dict[str, dict[str, Any]] = {}
-        self.selected_session_id: Optional[str] = None
         
     async def start_websocket_server(self):
         """Start WebSocket server for Chrome extension connection (with retry)."""
@@ -235,47 +233,34 @@ async def handle_list_tools() -> list[Tool]:
             },
         ),
         Tool(
-            name="create_session",
-            description="Create a session from a URL or an existing tab ID",
+            name="evaluate_js",
+            description="Evaluate JavaScript in the active tab and return result/error",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "url": {"type": "string"},
-                    "tabId": {"type": "number"},
-                    "active": {"type": "boolean", "default": True}
-                }
-            },
-        ),
-        Tool(
-            name="select_session",
-            description="Select an existing session by ID",
-            inputSchema={
-                "type": "object",
-                "properties": {"sessionId": {"type": "string"}},
-                "required": ["sessionId"]
-            },
-        ),
-        Tool(
-            name="session_info",
-            description="Get info about the currently selected session",
-            inputSchema={"type": "object", "properties": {}},
-        ),
-        Tool(
-            name="session_navigate",
-            description="Navigate the selected session's tab to a URL",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "url": {"type": "string"},
-                    "active": {"type": "boolean", "default": True}
+                    "expression": {"type": "string", "description": "JavaScript expression to eval in page context"}
                 },
-                "required": ["url"]
+                "required": ["expression"]
+            },
+        ),
+        
+        Tool(
+            name="console_logs_for_tab",
+            description="Return buffered console logs for a specific tab",
+            inputSchema={
+                "type": "object",
+                "properties": {"tabId": {"type": "number"}},
+                "required": ["tabId"]
             },
         ),
         Tool(
-            name="session_screenshot",
-            description="Screenshot the selected session's tab and save to artifacts",
-            inputSchema={"type": "object", "properties": {}},
+            name="enable_console_stream",
+            description="Enable DevTools console stream for a specific tab (non-focusing)",
+            inputSchema={
+                "type": "object",
+                "properties": {"tabId": {"type": "number"}},
+                "required": ["tabId"]
+            },
         ),
         Tool(
             name="analyze_screenshot",
@@ -301,6 +286,23 @@ async def handle_list_tools() -> list[Tool]:
                 "required": ["tabId", "prompt"]
             },
         ),
+        Tool(
+            name="get_window_bounds",
+            description="Get the Chrome window bounds for a tab",
+            inputSchema={
+                "type": "object",
+                "properties": {"tabId": {"type": "number"}},
+            },
+        ),
+        Tool(
+            name="get_viewport",
+            description="Get the viewport dimensions for a tab",
+            inputSchema={
+                "type": "object",
+                "properties": {"tabId": {"type": "number"}},
+            },
+        ),
+        
     ]
 
 @server.call_tool()
@@ -360,70 +362,34 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
             return [types.TextContent(type="text", text=f"Saved screenshot to {file_path}")]
         except Exception as e:
             raise Exception(f"Failed to screenshot tab: {str(e)}")
-    elif name == "create_session":
-        url = arguments.get("url")
+    elif name == "evaluate_js":
+        expression = arguments.get("expression")
+        if not expression:
+            raise ValueError("expression is required")
+        try:
+            result = await chrome_server.send_tool_request("evaluate_js", {"expression": expression})
+            return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
+        except Exception as e:
+            raise Exception(f"Failed to evaluate_js: {str(e)}")
+    
+    elif name == "console_logs_for_tab":
         tab_id = arguments.get("tabId")
-        active = arguments.get("active", True)
-        if not url and tab_id is None:
-            raise ValueError("Provide either url or tabId")
+        if tab_id is None:
+            raise ValueError("tabId is required")
         try:
-            actual_tab_id: Optional[int] = None
-            if url:
-                res = await chrome_server.send_tool_request("open_tab", {"url": url, "active": active})
-                actual_tab_id = res.get("tabId")
-            else:
-                actual_tab_id = int(tab_id)
-            if actual_tab_id is None:
-                raise Exception("Could not resolve tab ID")
-            session_id = str(uuid.uuid4())
-            chrome_server.sessions[session_id] = {"tab_id": actual_tab_id, "last_artifact": None}
-            chrome_server.selected_session_id = session_id
-            return [types.TextContent(type="text", text=json.dumps({"sessionId": session_id, "tabId": actual_tab_id}, indent=2))]
+            result = await chrome_server.send_tool_request("console_logs_for_tab", {"tabId": tab_id})
+            return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
         except Exception as e:
-            raise Exception(f"Failed to create session: {str(e)}")
-    elif name == "select_session":
-        session_id = arguments.get("sessionId")
-        if not session_id or session_id not in chrome_server.sessions:
-            raise ValueError("Unknown sessionId")
-        chrome_server.selected_session_id = session_id
-        return [types.TextContent(type="text", text=f"Selected session {session_id}")]
-    elif name == "session_info":
-        sid = chrome_server.selected_session_id
-        info = chrome_server.sessions.get(sid, None) if sid else None
-        return [types.TextContent(type="text", text=json.dumps({"selectedSessionId": sid, "info": info}, indent=2))]
-    elif name == "session_navigate":
-        sid = chrome_server.selected_session_id
-        if not sid:
-            raise ValueError("No session selected")
-        sess = chrome_server.sessions.get(sid)
-        if not sess:
-            raise ValueError("Selected session not found")
-        url = arguments.get("url")
-        active = arguments.get("active", True)
-        if not url:
-            raise ValueError("url is required")
+            raise Exception(f"Failed to get console_logs_for_tab: {str(e)}")
+    elif name == "enable_console_stream":
+        tab_id = arguments.get("tabId")
+        if tab_id is None:
+            raise ValueError("tabId is required")
         try:
-            await chrome_server.send_tool_request("navigate_tab", {"tabId": sess["tab_id"], "url": url, "active": active})
-            return [types.TextContent(type="text", text=f"Session {sid}: navigated tab {sess['tab_id']} to {url}")]
+            result = await chrome_server.send_tool_request("enable_console_stream", {"tabId": tab_id})
+            return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
         except Exception as e:
-            raise Exception(f"Failed to navigate session tab: {str(e)}")
-    elif name == "session_screenshot":
-        sid = chrome_server.selected_session_id
-        if not sid:
-            raise ValueError("No session selected")
-        sess = chrome_server.sessions.get(sid)
-        if not sess:
-            raise ValueError("Selected session not found")
-        try:
-            result = await chrome_server.send_tool_request("screenshot_tab", {"tabId": sess["tab_id"]})
-            data_url = result.get("dataUrl")
-            if not data_url:
-                raise Exception(result.get("error", "No dataUrl returned"))
-            file_path = chrome_server._save_data_url(data_url)
-            sess["last_artifact"] = str(file_path)
-            return [types.TextContent(type="text", text=json.dumps({"artifactPath": str(file_path), "sessionId": sid}, indent=2))]
-        except Exception as e:
-            raise Exception(f"Failed to screenshot session tab: {str(e)}")
+            raise Exception(f"Failed to enable_console_stream: {str(e)}")
     elif name == "analyze_screenshot":
         prompt = arguments.get("prompt")
         artifact_path = arguments.get("artifactPath")
@@ -472,6 +438,21 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
             return await handle_call_tool("analyze_screenshot", {"prompt": prompt, "artifactPath": str(img_path)})
         except Exception as e:
             raise Exception(f"Failed screenshot_and_analyze: {str(e)}")
+    elif name == "get_window_bounds":
+        tab_id = arguments.get("tabId")
+        try:
+            res = await chrome_server.send_tool_request("get_window_bounds", {"tabId": tab_id} if tab_id is not None else {})
+            return [types.TextContent(type="text", text=json.dumps(res, indent=2))]
+        except Exception as e:
+            raise Exception(f"Failed get_window_bounds: {str(e)}")
+    elif name == "get_viewport":
+        tab_id = arguments.get("tabId")
+        try:
+            res = await chrome_server.send_tool_request("get_viewport", {"tabId": tab_id} if tab_id is not None else {})
+            return [types.TextContent(type="text", text=json.dumps(res, indent=2))]
+        except Exception as e:
+            raise Exception(f"Failed get_viewport: {str(e)}")
+    
     
     else:
         raise ValueError(f"Unknown tool: {name}")

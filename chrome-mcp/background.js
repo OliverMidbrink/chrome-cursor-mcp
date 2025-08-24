@@ -1,5 +1,5 @@
 // Chrome MCP background service worker  
-// Commands supported: navigate, screenshot, console_logs, evaluate_js, active_tab, get_all_open_tabs, navigate_tab, screenshot_tab
+// Commands supported: navigate, screenshot, console_logs_for_tab, enable_console_stream, evaluate_js, active_tab, get_all_open_tabs, navigate_tab, screenshot_tab, get_window_bounds, get_viewport
 
 let ws = null;
 let wsUrl = "ws://127.0.0.1:6385";
@@ -22,6 +22,7 @@ function logThrottled(key, ...args) {
 
 // Keep a rolling buffer of console logs per tab
 const tabLogs = new Map(); // tabId -> string[]
+const attachedDebuggerTabs = new Set();
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Chrome MCP installed");
@@ -150,6 +151,28 @@ function connectWS() {
   }
 }
 
+// Listen to DevTools Protocol events to capture console/log entries
+chrome.debugger.onEvent.addListener((source, method, params) => {
+  try {
+    const tabId = source.tabId;
+    if (!tabId) return;
+    const buf = tabLogs.get(tabId) || [];
+    if (method === 'Runtime.consoleAPICalled') {
+      const level = params.type || 'log';
+      const args = (params.args || []).map(a => a.value != null ? String(a.value) : a.description || '').join(' ');
+      buf.push(`[${level}] ${args}`);
+    } else if (method === 'Log.entryAdded') {
+      const e = params.entry || {};
+      buf.push(`[${e.level || 'log'}] ${e.text || ''}`);
+    } else if (method === 'Runtime.exceptionThrown') {
+      const d = params.exceptionDetails || {};
+      buf.push(`[error] exception ${d.text || ''}`);
+    }
+    if (buf.length > 2000) buf.shift();
+    tabLogs.set(tabId, buf);
+  } catch (_) {}
+});
+
 async function handleTool(tool, args) {
 
   if (tool === "active_tab") {
@@ -186,10 +209,23 @@ async function handleTool(tool, args) {
     });
     return { ok: result?.ok, value: result?.value, error: result?.error };
   }
-  if (tool === "console_logs") {
-    const tab = await getActiveTab();
-    const logs = tabLogs.get(tab.id) || [];
+  if (tool === "console_logs_for_tab") {
+    const { tabId } = args || {};
+    if (tabId == null) throw new Error("console_logs_for_tab requires tabId");
+    const logs = tabLogs.get(tabId) || [];
     return { logs };
+  }
+  if (tool === "enable_console_stream") {
+    const { tabId } = args || {};
+    if (tabId == null) throw new Error("enable_console_stream requires tabId");
+    const target = { tabId };
+    if (!attachedDebuggerTabs.has(tabId)) {
+      await new Promise((resolve, reject) => chrome.debugger.attach(target, "1.3", () => chrome.runtime.lastError ? reject(chrome.runtime.lastError) : resolve()));
+      attachedDebuggerTabs.add(tabId);
+      try { await sendCommand(target, 'Runtime.enable', {}); } catch (_) {}
+      try { await sendCommand(target, 'Log.enable', {}); } catch (_) {}
+    }
+    return { ok: true };
   }
   if (tool === "screenshot") {
     const dataUrl = await chrome.tabs.captureVisibleTab();
@@ -233,6 +269,22 @@ async function handleTool(tool, args) {
     } catch (error) {
       return { ok: false, error: error.message };
     }
+  }
+  if (tool === "get_window_bounds") {
+    const { tabId } = args;
+    const tab = tabId != null ? await chrome.tabs.get(tabId) : await getActiveTab();
+    const win = await chrome.windows.get(tab.windowId);
+    return { width: win.width, height: win.height, left: win.left, top: win.top, windowId: win.id };
+  }
+  if (tool === "get_viewport") {
+    const { tabId } = args;
+    const tab = tabId != null ? await chrome.tabs.get(tabId) : await getActiveTab();
+    const [{ result }] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => ({ innerWidth: window.innerWidth, innerHeight: window.innerHeight, devicePixelRatio: window.devicePixelRatio }),
+      args: [],
+    });
+    return { ...result };
   }
   throw new Error(`unknown tool ${tool}`);
 }
