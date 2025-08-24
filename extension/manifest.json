@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Chrome MCP Bridge",
+  "description": "Bridge Chrome to an MCP server: navigate, screenshot, console logs, evaluate.",
+  "version": "0.1.0",
+  "permissions": [
+    "tabs",
+    "scripting",
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "background": {"service_worker": "background.js", "type": "module"},
+  "action": {"default_title": "Chrome MCP", "default_popup": "popup.html"},
+  "content_scripts": [
+    {"matches": ["<all_urls>"], "js": ["content.js"], "run_at": "document_start"}
+  ],
+  "icons": {"16": "icon16.png", "32": "icon32.png", "128": "icon128.png"}
+}
