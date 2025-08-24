@@ -72,15 +72,20 @@ async function handleTool(tool, args) {
     const tab = await getActiveTab();
     return { tabId: tab?.id, url: tab?.url };
   }
+  if (tool === "open_tab") {
+    const { url, active } = args;
+    const tab = await openTab(url, active);
+    return { tabId: tab?.id, url: tab?.url };
+  }
   if (tool === "navigate") {
     const { url } = args;
-    const tab = await getActiveTabOrCreate();
+    const tab = await getActiveTab();
     await chrome.tabs.update(tab.id, { url });
     return { done: true };
   }
   if (tool === "evaluate_js") {
     const { expression } = args;
-    const tab = await getActiveTabOrCreate();
+    const tab = await getActiveTab();
     const [{ result }] = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: (expr) => {
@@ -92,7 +97,7 @@ async function handleTool(tool, args) {
     return { ok: result?.ok, value: result?.value, error: result?.error };
   }
   if (tool === "console_logs") {
-    const tab = await getActiveTabOrCreate();
+    const tab = await getActiveTab();
     const logs = tabLogs.get(tab.id) || [];
     return { logs };
   }
@@ -151,9 +156,6 @@ async function getActiveTab() {
   return tabs[0];
 }
 
-async function getActiveTabOrCreate() {
-  const t = await getActiveTab();
-  if (t) return t;
-  const created = await chrome.tabs.create({ url: "about:blank", active: true });
-  return created;
+async function openTab(url, active = true) {
+  return chrome.tabs.create({ url, active });
 }
