@@ -289,6 +289,18 @@ async def handle_list_tools() -> list[Tool]:
                 "required": ["prompt"]
             },
         ),
+        Tool(
+            name="screenshot_and_analyze",
+            description="Capture a screenshot of a tab (by ID) and analyze it with OpenAI VLM",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "tabId": {"type": "number"},
+                    "prompt": {"type": "string"}
+                },
+                "required": ["tabId", "prompt"]
+            },
+        ),
     ]
 
 @server.call_tool()
@@ -432,22 +444,34 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
         if not p.exists():
             raise ValueError(f"artifact does not exist: {artifact_path}")
         img_b64 = base64.b64encode(p.read_bytes()).decode("utf-8")
-        client = OpenAI(api_key=api_key)
+        # Use default env-based client
+        client = OpenAI()
         image_suffix = p.suffix.lstrip('.') or 'png'
         content = [
             {"type": "text", "text": prompt},
             {"type": "image_url", "image_url": {"url": f"data:image/{image_suffix};base64,{img_b64}"}},
         ]
         try:
-            resp = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": content}],
-                temperature=0.2,
-            )
+            resp = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role": "user", "content": content}], temperature=0.2)
             text = resp.choices[0].message.content
             return [types.TextContent(type="text", text=text)]
         except Exception as e:
             raise Exception(f"OpenAI analysis failed: {str(e)}")
+    elif name == "screenshot_and_analyze":
+        tab_id = arguments.get("tabId")
+        prompt = arguments.get("prompt")
+        if tab_id is None or not prompt:
+            raise ValueError("tabId and prompt are required")
+        try:
+            shot = await chrome_server.send_tool_request("screenshot_tab", {"tabId": tab_id})
+            data_url = shot.get("dataUrl")
+            if not data_url:
+                raise Exception(shot.get("error", "No dataUrl returned"))
+            img_path = chrome_server._save_data_url(data_url)
+            # Reuse analyze_screenshot flow
+            return await handle_call_tool("analyze_screenshot", {"prompt": prompt, "artifactPath": str(img_path)})
+        except Exception as e:
+            raise Exception(f"Failed screenshot_and_analyze: {str(e)}")
     
     else:
         raise ValueError(f"Unknown tool: {name}")

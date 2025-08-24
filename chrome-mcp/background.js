@@ -201,16 +201,19 @@ async function handleTool(tool, args) {
     const tab = await chrome.tabs.get(tabId);
     if (!tab) throw new Error("tab not found");
     try {
-      // Focus the window and activate the tab to ensure capture
-      if (tab.windowId != null) {
-        try { await chrome.windows.update(tab.windowId, { focused: true }); } catch (_) {}
-      }
-      await chrome.tabs.update(tabId, { active: true });
+      // Use Chrome DevTools Protocol via chrome.debugger to capture without focus
+      const target = { tabId };
+      await new Promise((resolve, reject) => chrome.debugger.attach(target, "1.3", () => chrome.runtime.lastError ? reject(chrome.runtime.lastError) : resolve()));
+      await sendCommand(target, "Page.enable", {});
+      // Ensure frame is ready
       await delay(200);
-      const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId);
+      const screenshot = await sendCommand(target, "Page.captureScreenshot", { format: "jpeg", quality: 85, fromSurface: true });
+      await new Promise((resolve) => chrome.debugger.detach(target, () => resolve()));
+      const dataUrl = `data:image/jpeg;base64,${screenshot.data}`;
       return { dataUrl, tabId };
     } catch (e) {
-      return { ok: false, error: String(e) };
+      try { await new Promise((resolve) => chrome.debugger.detach({ tabId }, () => resolve())); } catch (_) {}
+      return { ok: false, error: String(e && e.message || e) };
     }
   }
   if (tool === "get_all_open_tabs") {
@@ -275,4 +278,14 @@ async function openTab(url, active = true) {
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function sendCommand(target, method, params) {
+  return new Promise((resolve, reject) => {
+    chrome.debugger.sendCommand(target, method, params, (result) => {
+      const err = chrome.runtime.lastError;
+      if (err) return reject(err);
+      resolve(result);
+    });
+  });
 }
