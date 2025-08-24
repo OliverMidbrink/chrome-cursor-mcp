@@ -1,5 +1,5 @@
 // Chrome MCP background service worker  
-// Commands supported: navigate, screenshot, console_logs_for_tab, enable_console_stream, evaluate_js, active_tab, get_all_open_tabs, navigate_tab, screenshot_tab, get_window_bounds, get_viewport
+// Commands supported: navigate, screenshot, console_logs_for_tab, enable_console_stream, evaluate_js, active_tab, get_all_open_tabs, navigate_tab, screenshot_tab, get_window_bounds, get_viewport, close_tab, close_tabs_by_url
 
 let ws = null;
 let wsUrl = "ws://127.0.0.1:6385";
@@ -269,6 +269,22 @@ async function handleTool(tool, args) {
     } catch (error) {
       return { ok: false, error: error.message };
     }
+  }
+  if (tool === "close_tab") {
+    const { tabId } = args || {};
+    if (tabId == null) throw new Error("close_tab requires tabId");
+    try { await chrome.tabs.remove(tabId); } catch (e) { return { ok: false, error: String(e) }; }
+    return { ok: true };
+  }
+  if (tool === "close_tabs_by_url") {
+    const { includes } = args || {};
+    if (!includes) throw new Error("close_tabs_by_url requires includes substring");
+    const allTabs = await chrome.tabs.query({});
+    const toClose = allTabs.filter(t => (t.url || '').includes(includes)).map(t => t.id).filter(Boolean);
+    if (toClose.length) {
+      try { await chrome.tabs.remove(toClose); } catch (_) {}
+    }
+    return { ok: true, closed: toClose };
   }
   if (tool === "get_window_bounds") {
     const { tabId } = args;
