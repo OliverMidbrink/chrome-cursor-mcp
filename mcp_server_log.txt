@@ -1,0 +1,132 @@
+2025-08-24 15:25:14,930 - INFO - server listening on 127.0.0.1:6385
+2025-08-24 15:25:14,930 - INFO - WebSocket server started on ws://127.0.0.1:6385
+2025-08-24 15:25:14,930 - INFO - Waiting for Chrome extension to connect...
+2025-08-24 15:25:15,166 - INFO - connection open
+2025-08-24 15:25:15,166 - INFO - Chrome extension connected!
+2025-08-24 15:25:15,168 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:25:16,946 - INFO - Startup test: opened example.com (inactive). Response: {'id': 1, 'ok': True, 'tabId': 1270030647, 'url': ''}
+2025-08-24 15:25:16,956 - WARNING - Failed to validate request: 'InitializeResult' object has no attribute 'server_name'
+2025-08-24 15:34:18,652 - INFO - server listening on 127.0.0.1:6385
+2025-08-24 15:34:18,652 - INFO - WebSocket server started on ws://127.0.0.1:6385
+2025-08-24 15:34:18,652 - INFO - Waiting for Chrome extension to connect...
+2025-08-24 15:34:20,653 - WARNING - Startup test skipped: Chrome extension not connected
+2025-08-24 15:34:20,671 - INFO - Processing request of type ListToolsRequest
+2025-08-24 15:34:21,188 - INFO - connection open
+2025-08-24 15:34:21,189 - INFO - Chrome extension connected!
+2025-08-24 15:34:21,190 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:34:52,953 - INFO - connection open
+2025-08-24 15:34:52,955 - INFO - Chrome extension connected!
+2025-08-24 15:34:52,956 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:34:53,655 - INFO - Processing request of type CallToolRequest
+2025-08-24 15:35:35,568 - INFO - connection open
+2025-08-24 15:35:35,569 - INFO - Chrome extension connected!
+2025-08-24 15:35:35,570 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:36:06,135 - INFO - connection open
+2025-08-24 15:36:06,135 - INFO - Chrome extension connected!
+2025-08-24 15:36:06,137 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:36:36,655 - INFO - connection open
+2025-08-24 15:36:36,656 - INFO - Chrome extension connected!
+2025-08-24 15:36:36,657 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:37:07,168 - INFO - connection open
+2025-08-24 15:37:07,168 - INFO - Chrome extension connected!
+2025-08-24 15:37:07,169 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:37:37,685 - INFO - connection open
+2025-08-24 15:37:37,687 - INFO - Chrome extension connected!
+2025-08-24 15:37:37,689 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:38:08,205 - INFO - connection open
+2025-08-24 15:38:08,205 - INFO - Chrome extension connected!
+2025-08-24 15:38:08,207 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:38:38,719 - INFO - connection open
+2025-08-24 15:38:38,719 - INFO - Chrome extension connected!
+2025-08-24 15:38:38,721 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:39:09,236 - INFO - connection open
+2025-08-24 15:39:09,237 - INFO - Chrome extension connected!
+2025-08-24 15:39:09,238 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:39:39,752 - INFO - connection open
+2025-08-24 15:39:39,753 - INFO - Chrome extension connected!
+2025-08-24 15:39:39,755 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:40:10,266 - INFO - connection open
+2025-08-24 15:40:10,267 - INFO - Chrome extension connected!
+2025-08-24 15:40:10,269 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:40:40,780 - INFO - connection open
+2025-08-24 15:40:40,782 - INFO - Chrome extension connected!
+2025-08-24 15:40:40,784 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:41:11,297 - INFO - connection open
+2025-08-24 15:41:11,297 - INFO - Chrome extension connected!
+2025-08-24 15:41:11,298 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:41:41,811 - INFO - connection open
+2025-08-24 15:41:41,812 - INFO - Chrome extension connected!
+2025-08-24 15:41:41,814 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:42:12,323 - INFO - connection open
+2025-08-24 15:42:12,324 - INFO - Chrome extension connected!
+2025-08-24 15:42:12,325 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:42:42,831 - INFO - connection open
+2025-08-24 15:42:42,831 - INFO - Chrome extension connected!
+2025-08-24 15:42:42,833 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:43:13,343 - INFO - connection open
+2025-08-24 15:43:13,343 - INFO - Chrome extension connected!
+2025-08-24 15:43:13,345 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:43:43,859 - INFO - connection open
+2025-08-24 15:43:43,860 - INFO - Chrome extension connected!
+2025-08-24 15:43:43,861 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:44:14,376 - INFO - connection open
+2025-08-24 15:44:14,376 - INFO - Chrome extension connected!
+2025-08-24 15:44:14,378 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:44:44,892 - INFO - connection open
+2025-08-24 15:44:44,893 - INFO - Chrome extension connected!
+2025-08-24 15:44:44,895 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:44:51,919 - INFO - server listening on 127.0.0.1:6385
+2025-08-24 15:44:51,919 - INFO - WebSocket server started on ws://127.0.0.1:6385
+2025-08-24 15:44:51,919 - INFO - Waiting for Chrome extension to connect...
+2025-08-24 15:44:52,237 - INFO - connection open
+2025-08-24 15:44:52,237 - INFO - Chrome extension connected!
+2025-08-24 15:44:52,241 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:44:53,939 - INFO - Startup test: opened example.com (inactive). Response: {'id': 1, 'ok': True, 'tabId': 1270030655, 'url': ''}
+2025-08-24 15:44:53,978 - INFO - Processing request of type ListToolsRequest
+2025-08-24 15:45:32,748 - INFO - connection open
+2025-08-24 15:45:32,748 - INFO - Chrome extension connected!
+2025-08-24 15:45:32,750 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:46:03,263 - INFO - connection open
+2025-08-24 15:46:03,264 - INFO - Chrome extension connected!
+2025-08-24 15:46:03,265 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:46:22,661 - INFO - Processing request of type CallToolRequest
+2025-08-24 15:46:36,223 - INFO - Processing request of type CallToolRequest
+2025-08-24 15:47:13,775 - INFO - connection open
+2025-08-24 15:47:13,775 - INFO - Chrome extension connected!
+2025-08-24 15:47:13,777 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:47:44,290 - INFO - connection open
+2025-08-24 15:47:44,290 - INFO - Chrome extension connected!
+2025-08-24 15:47:44,292 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:47:55,778 - INFO - connection open
+2025-08-24 15:47:55,778 - INFO - Chrome extension connected!
+2025-08-24 15:47:55,779 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:48:26,294 - INFO - connection open
+2025-08-24 15:48:26,294 - INFO - Chrome extension connected!
+2025-08-24 15:48:26,296 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:48:32,266 - INFO - Processing request of type CallToolRequest
+2025-08-24 15:48:36,492 - INFO - Processing request of type CallToolRequest
+2025-08-24 15:48:41,210 - INFO - Processing request of type CallToolRequest
+2025-08-24 15:48:44,345 - INFO - Processing request of type CallToolRequest
+2025-08-24 15:49:16,812 - INFO - connection open
+2025-08-24 15:49:16,813 - INFO - Chrome extension connected!
+2025-08-24 15:49:16,815 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:49:47,329 - INFO - connection open
+2025-08-24 15:49:47,329 - INFO - Chrome extension connected!
+2025-08-24 15:49:47,331 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:50:17,846 - INFO - connection open
+2025-08-24 15:50:17,846 - INFO - Chrome extension connected!
+2025-08-24 15:50:17,848 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:50:48,361 - INFO - connection open
+2025-08-24 15:50:48,362 - INFO - Chrome extension connected!
+2025-08-24 15:50:48,364 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:51:18,878 - INFO - connection open
+2025-08-24 15:51:18,879 - INFO - Chrome extension connected!
+2025-08-24 15:51:18,880 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:51:49,395 - INFO - connection open
+2025-08-24 15:51:49,395 - INFO - Chrome extension connected!
+2025-08-24 15:51:49,396 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+2025-08-24 15:51:54,171 - INFO - Processing request of type CallToolRequest
+2025-08-24 15:52:00,375 - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-24 15:52:19,912 - INFO - connection open
+2025-08-24 15:52:19,913 - INFO - Chrome extension connected!
+2025-08-24 15:52:19,915 - INFO - Extension info: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36

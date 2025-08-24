@@ -1,5 +1,5 @@
 // Chrome MCP background service worker  
-// Commands supported: navigate, screenshot, console_logs, evaluate_js, active_tab, get_all_open_tabs
+// Commands supported: navigate, screenshot, console_logs, evaluate_js, active_tab, get_all_open_tabs, navigate_tab, screenshot_tab
 
 let ws = null;
 let wsUrl = "ws://127.0.0.1:6385";
@@ -167,6 +167,12 @@ async function handleTool(tool, args) {
     await chrome.tabs.update(tab.id, { url });
     return { done: true };
   }
+  if (tool === "navigate_tab") {
+    const { tabId, url, active } = args;
+    if (tabId == null || !url) throw new Error("navigate_tab requires tabId and url");
+    const tab = await chrome.tabs.update(tabId, { url, active: active !== false });
+    return { done: true, tabId: tab?.id, url: tab?.url };
+  }
   if (tool === "evaluate_js") {
     const { expression } = args;
     const tab = await getActiveTab();
@@ -188,6 +194,24 @@ async function handleTool(tool, args) {
   if (tool === "screenshot") {
     const dataUrl = await chrome.tabs.captureVisibleTab();
     return { dataUrl };
+  }
+  if (tool === "screenshot_tab") {
+    const { tabId } = args;
+    if (tabId == null) throw new Error("screenshot_tab requires tabId");
+    const tab = await chrome.tabs.get(tabId);
+    if (!tab) throw new Error("tab not found");
+    try {
+      // Focus the window and activate the tab to ensure capture
+      if (tab.windowId != null) {
+        try { await chrome.windows.update(tab.windowId, { focused: true }); } catch (_) {}
+      }
+      await chrome.tabs.update(tabId, { active: true });
+      await delay(200);
+      const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId);
+      return { dataUrl, tabId };
+    } catch (e) {
+      return { ok: false, error: String(e) };
+    }
   }
   if (tool === "get_all_open_tabs") {
     try {
@@ -247,4 +271,8 @@ async function getActiveTab() {
 
 async function openTab(url, active = true) {
   return chrome.tabs.create({ url, active });
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
