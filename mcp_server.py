@@ -302,6 +302,24 @@ async def handle_list_tools() -> list[Tool]:
                 "properties": {"tabId": {"type": "number"}},
             },
         ),
+        Tool(
+            name="close_tab",
+            description="Close a specific tab by ID",
+            inputSchema={
+                "type": "object",
+                "properties": {"tabId": {"type": "number"}},
+                "required": ["tabId"]
+            },
+        ),
+        Tool(
+            name="close_tabs_by_url",
+            description="Close all tabs whose URL contains the given substring",
+            inputSchema={
+                "type": "object",
+                "properties": {"includes": {"type": "string"}},
+                "required": ["includes"]
+            },
+        ),
         
     ]
 
@@ -390,6 +408,24 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
             return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
         except Exception as e:
             raise Exception(f"Failed to enable_console_stream: {str(e)}")
+    elif name == "close_tab":
+        tab_id = arguments.get("tabId")
+        if tab_id is None:
+            raise ValueError("tabId is required")
+        try:
+            result = await chrome_server.send_tool_request("close_tab", {"tabId": tab_id})
+            return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
+        except Exception as e:
+            raise Exception(f"Failed to close_tab: {str(e)}")
+    elif name == "close_tabs_by_url":
+        includes = arguments.get("includes")
+        if not includes:
+            raise ValueError("includes is required")
+        try:
+            result = await chrome_server.send_tool_request("close_tabs_by_url", {"includes": includes})
+            return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
+        except Exception as e:
+            raise Exception(f"Failed to close_tabs_by_url: {str(e)}")
     elif name == "analyze_screenshot":
         prompt = arguments.get("prompt")
         artifact_path = arguments.get("artifactPath")
