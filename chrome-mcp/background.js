@@ -4,9 +4,21 @@
 let ws = null;
 let wsUrl = "ws://127.0.0.1:6385";
 let reconnectTimer = null;
-let reconnectDelayMs = 500;
-const reconnectMaxMs = 15000;
+const reconnectDelayMs = 500; // Fixed 500ms interval
 let connecting = false;
+let heartbeatTimer = null;
+let lastActivityTs = Date.now();
+
+// Throttled logging to avoid console spam when server is down
+const logLast = new Map();
+function logThrottled(key, ...args) {
+  const now = Date.now();
+  const last = logLast.get(key) || 0;
+  if (now - last > 2000) {
+    console.log(...args);
+    logLast.set(key, now);
+  }
+}
 
 // Keep a rolling buffer of console logs per tab
 const tabLogs = new Map(); // tabId -> string[]
@@ -18,50 +30,122 @@ chrome.runtime.onInstalled.addListener(() => {
 // Connect to WebSocket immediately on startup
 connectWS();
 
+// Also attempt a connection on browser startup
+chrome.runtime.onStartup?.addListener(() => {
+  connectWS();
+});
+
 function scheduleReconnect() {
   if (reconnectTimer) return;
   reconnectTimer = setTimeout(() => {
     reconnectTimer = null;
     connectWS();
   }, reconnectDelayMs);
-  reconnectDelayMs = Math.min(reconnectMaxMs, Math.floor(reconnectDelayMs * 2));
 }
 
 function connectWS() {
+  // Prevent any uncaught errors from bubbling up
   try {
-    if (connecting || ws) return;
+    if (connecting || (ws && ws.readyState === WebSocket.OPEN)) return;
+    
+    // Clean up existing connection
+    if (ws) {
+      try { ws.close(); } catch (_) {}
+      ws = null;
+    }
+    
     connecting = true;
-    ws = new WebSocket(wsUrl);
+    
+    // Wrap WebSocket creation in try-catch to prevent errors
+    try {
+      ws = new WebSocket(wsUrl);
+    } catch (e) {
+      logThrottled("connect-error", "Failed to connect to MCP server - server not started?");
+      connecting = false;
+      scheduleReconnect();
+      return;
+    }
+    
     ws.onopen = () => {
       console.log("Chrome MCP connected:", wsUrl);
-      ws.send(JSON.stringify({ event: "hello", ua: navigator.userAgent }));
-      reconnectDelayMs = 500;
-      connecting = false;
-    };
-    ws.onclose = () => {
-      ws = null;
-      connecting = false;
-      scheduleReconnect();
-    };
-    ws.onerror = () => {
-      try { ws && ws.close(); } catch (_) {}
-      ws = null;
-      connecting = false;
-      scheduleReconnect();
-    };
-    ws.onmessage = async (ev) => {
-      let msg;
-      try { msg = JSON.parse(ev.data); } catch { return; }
-      const { id, tool, args } = msg || {};
-      if (!tool || id == null) return;
       try {
-        const res = await handleTool(tool, args || {});
-        ws && ws.send(JSON.stringify({ id, ok: true, ...res }));
+        ws.send(JSON.stringify({ event: "hello", ua: navigator.userAgent }));
       } catch (e) {
-        ws && ws.send(JSON.stringify({ id, ok: false, error: String(e) }));
+        console.log("Failed to send hello message");
+      }
+      connecting = false;
+
+      // Reset activity and start heartbeat keepalive
+      lastActivityTs = Date.now();
+      if (heartbeatTimer) { try { clearInterval(heartbeatTimer); } catch (_) {} heartbeatTimer = null; }
+      heartbeatTimer = setInterval(() => {
+        try {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            // Application-level heartbeat (server may ignore)
+            ws.send(JSON.stringify({ event: "ping", ts: Date.now() }));
+            // If no activity for a while, force reconnect
+            if (Date.now() - lastActivityTs > 30000) {
+              try { ws.close(); } catch (_) {}
+            }
+          } else {
+            try { clearInterval(heartbeatTimer); } catch (_) {}
+            heartbeatTimer = null;
+          }
+        } catch (_) {}
+      }, 10000);
+    };
+    
+    ws.onclose = (event) => {
+      logThrottled("closed", "MCP server connection closed");
+      ws = null;
+      connecting = false;
+      if (heartbeatTimer) { try { clearInterval(heartbeatTimer); } catch (_) {} heartbeatTimer = null; }
+      scheduleReconnect();
+    };
+    
+    ws.onerror = (error) => {
+      logThrottled("connect-error", "Failed to connect to MCP server - server not started?");
+      try { 
+        if (ws) ws.close(); 
+      } catch (_) {}
+      ws = null;
+      connecting = false;
+      if (heartbeatTimer) { try { clearInterval(heartbeatTimer); } catch (_) {} heartbeatTimer = null; }
+      scheduleReconnect();
+    };
+    
+    ws.onmessage = async (ev) => {
+      try {
+        let msg;
+        try { 
+          msg = JSON.parse(ev.data); 
+        } catch { 
+          return; 
+        }
+        
+        lastActivityTs = Date.now();
+        const { id, tool, args } = msg || {};
+        if (!tool || id == null) return;
+        
+        try {
+          const res = await handleTool(tool, args || {});
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ id, ok: true, ...res }));
+          }
+        } catch (e) {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ id, ok: false, error: String(e) }));
+          }
+        }
+      } catch (e) {
+        console.log("Error handling WebSocket message:", e.message);
       }
     };
+    
   } catch (e) {
+    logThrottled("connect-error", "Failed to connect to MCP server - server not started?");
+    connecting = false;
+    ws = null;
     scheduleReconnect();
   }
 }
@@ -149,6 +233,11 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     // stream to WS as events
     try { ws && ws.send(JSON.stringify({ event: "console_log", tabId: sender.tab.id, line: msg.payload })); } catch (_) {}
   }
+});
+
+// Cleanup tab log buffer when tabs are closed
+chrome.tabs.onRemoved.addListener((tabId) => {
+  try { tabLogs.delete(tabId); } catch (_) {}
 });
 
 async function getActiveTab() {
