@@ -24,6 +24,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Throttled logging helper to reduce spam
+_last_log: dict[str, float] = {}
+def log_throttled(key: str, level: str, message: str):
+    import time
+    now = time.time()
+    last = _last_log.get(key, 0)
+    if now - last >= 2.0:
+        _last_log[key] = now
+        if level == "info":
+            logger.info(message)
+        elif level == "warning":
+            logger.warning(message)
+        else:
+            logger.error(message)
+
 class ChromeMCPServer:
     def __init__(self):
         self.websocket = None
@@ -33,7 +48,7 @@ class ChromeMCPServer:
         self.connected = False
         
     async def start_websocket_server(self):
-        """Start WebSocket server for Chrome extension connection"""
+        """Start WebSocket server for Chrome extension connection (with retry)."""
         async def handle_client(websocket, path):
             logger.info("Chrome extension connected!")
             self.websocket = websocket
@@ -66,18 +81,27 @@ class ChromeMCPServer:
                 self.websocket = None
                 self.connected = False
         
-        # Start WebSocket server
-        try:
-            self.websocket_server = await websockets.serve(
-                handle_client, 
-                "127.0.0.1", 
-                6385
-            )
-            logger.info("WebSocket server started on ws://127.0.0.1:6385")
-            logger.info("Waiting for Chrome extension to connect...")
-        except Exception as e:
-            logger.error(f"Failed to start WebSocket server: {e}")
-            raise
+        # Start WebSocket server with retry until it binds
+        while True:
+            if self.websocket_server is not None:
+                # Already started
+                return
+            try:
+                self.websocket_server = await websockets.serve(
+                    handle_client,
+                    "127.0.0.1",
+                    6385
+                )
+                logger.info("WebSocket server started on ws://127.0.0.1:6385")
+                logger.info("Waiting for Chrome extension to connect...")
+                return
+            except OSError as e:
+                # Address already in use or similar — retry shortly
+                log_throttled("ws-bind", "warning", f"WebSocket bind failed ({e}); retrying in 0.5s")
+                await asyncio.sleep(0.5)
+            except Exception as e:
+                log_throttled("ws-start", "error", f"Failed to start WebSocket server ({e}); retrying in 0.5s")
+                await asyncio.sleep(0.5)
     
     async def send_tool_request(self, tool: str, args: Dict[str, Any]) -> Dict[str, Any]:
         """Send a tool request to the Chrome extension"""
@@ -174,31 +198,46 @@ async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent
         raise ValueError(f"Unknown tool: {name}")
 
 async def main():
-    """Main server function"""
-    try:
-        # Start WebSocket server
-        await chrome_server.start_websocket_server()
-        
-        # Run MCP server
-        async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-            await server.run(
-                read_stream,
-                write_stream,
-                InitializeResult(
-                    protocolVersion="2024-11-05",
-                    capabilities=server.get_capabilities(
-                        notification_options=NotificationOptions(),
-                        experimental_capabilities={},
+    """Main server function with self-healing loop"""
+    while True:
+        try:
+            # Start WebSocket server (retries inside until bound)
+            await chrome_server.start_websocket_server()
+
+            # One-time startup smoke test: wait 2s for extension, then open example.com inactive
+            try:
+                await asyncio.sleep(2.0)
+                if chrome_server.connected:
+                    try:
+                        resp = await chrome_server.send_tool_request("open_tab", {"url": "https://example.com", "active": False})
+                        logger.info(f"Startup test: opened example.com (inactive). Response: {resp}")
+                    except Exception as e:
+                        logger.warning(f"Startup test failed: {e}")
+                else:
+                    logger.warning("Startup test skipped: Chrome extension not connected")
+            except Exception as e:
+                logger.warning(f"Startup test error: {e}")
+
+            # Run MCP server over stdio
+            async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+                await server.run(
+                    read_stream,
+                    write_stream,
+                    InitializeResult(
+                        protocolVersion="2024-11-05",
+                        capabilities=server.get_capabilities(
+                            notification_options=NotificationOptions(),
+                            experimental_capabilities={},
+                        ),
+                        serverInfo=Implementation(
+                            name="cursor-chrome-mcp",
+                            version="1.0.0"
+                        ),
                     ),
-                    serverInfo=Implementation(
-                        name="cursor-chrome-mcp",
-                        version="1.0.0"
-                    ),
-                ),
-            )
-    except Exception as e:
-        logger.error(f"Server error: {e}")
-        raise
+                )
+        except Exception as e:
+            log_throttled("main-loop", "error", f"MCP server error: {e}; restarting in 0.5s")
+            await asyncio.sleep(0.5)
 
 if __name__ == "__main__":
     asyncio.run(main())
